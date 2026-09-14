@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Обложка работы для портфолио FL.ru: квадрат 1000×1000.
+"""Обложки работы для бирж.
 
-Запуск: python3 tools/oblozhka.py
-Кладёт pokazat/fl/oblozhka.png
+Запуск: python3 tools/oblozhka.py [fl|kwork]
+  fl    — квадрат 1000×1000 (FL.ru требует 1:1)  -> pokazat/fl/oblozhka.png
+  kwork — 1200×800 (Kwork требует от 660×440)   -> pokazat/kwork/oblozhka.png
 
 Стиль повторяет две работы, уже стоящие в портфолио: тёмный фон,
 рубрика капсом, крупный заголовок, две цифры и снимок самой работы.
@@ -19,6 +20,14 @@ HTML = (KOREN / "index.html").read_text(encoding="utf-8")
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 SNIMOK = KOREN / "pokazat" / "otchet-na-kompyutere.png"
 
+import sys
+
+FORMAT = sys.argv[1] if len(sys.argv) > 1 else "fl"
+RAZMERY = {"fl": (1000, 1000, "fl"), "kwork": (1200, 800, "kwork")}
+if FORMAT not in RAZMERY:
+    sys.exit("Формат: fl или kwork")
+SHIRINA, VYSOTA, PAPKA = RAZMERY[FORMAT]
+
 shrift = re.search(r"@font-face\{.*?\}", HTML, re.S).group(0)
 snimok_b64 = base64.b64encode(SNIMOK.read_bytes()).decode("ascii")
 
@@ -30,19 +39,19 @@ STRANICA = f"""<!doctype html><html lang="ru"><head><meta charset="utf-8"><style
   --tekst:#f3f5f7; --tekst-2:#9aa4b0;
   --zelenyj:#4ec98a; --zheltyj:#e0a54a;
 }}
-body{{width:1000px;height:1000px;background:var(--fon);color:var(--tekst);
+body{{width:{SHIRINA}px;height:{VYSOTA}px;background:var(--fon);color:var(--tekst);
   font-family:"Inter",system-ui,sans-serif;
-  padding:64px 60px 0;display:flex;flex-direction:column;overflow:hidden}}
+  padding:{"56px 60px 0" if FORMAT == "kwork" else "64px 60px 0"};display:flex;flex-direction:column;overflow:hidden}}
 .rubrika{{font-size:19px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
   color:var(--tekst-2)}}
-h1{{font-size:62px;font-weight:700;letter-spacing:-.025em;line-height:1.06;margin-top:20px}}
-.cifry{{display:flex;gap:18px;margin-top:36px}}
+h1{{font-size:{62 if FORMAT == "fl" else 58}px;font-weight:700;letter-spacing:-.025em;line-height:1.06;margin-top:20px}}
+.cifry{{display:flex;gap:18px;margin-top:{36 if FORMAT == "fl" else 28}px}}
 .c{{flex:1;background:var(--list);border:1px solid var(--ramka);border-radius:16px;padding:24px 26px}}
 .c b{{display:block;font-size:46px;font-weight:700;letter-spacing:-.02em;line-height:1.05}}
 .c .z{{color:var(--zelenyj)}}
 .c i{{display:block;font-style:normal;font-size:20px;font-weight:600;margin-top:8px}}
 .c span{{display:block;font-size:17px;color:var(--tekst-2);margin-top:3px;line-height:1.35}}
-.snimok{{margin-top:40px;border-radius:16px 16px 0 0;overflow:hidden;
+.snimok{{margin-top:{40 if FORMAT == "fl" else 30}px;border-radius:16px 16px 0 0;overflow:hidden;
   border:1px solid var(--ramka);border-bottom:0;flex:1}}
 .snimok img{{display:block;width:100%}}
 </style></head><body>
@@ -56,13 +65,13 @@ h1{{font-size:62px;font-weight:700;letter-spacing:-.025em;line-height:1.06;margi
 </body></html>"""
 
 if __name__ == "__main__":
-    vyhod = KOREN / "pokazat" / "fl" / "oblozhka.png"
+    vyhod = KOREN / "pokazat" / PAPKA / "oblozhka.png"
     vyhod.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as vremenno:
         istochnik = pathlib.Path(vremenno) / "o.html"
         istochnik.write_text(STRANICA, encoding="utf-8")
         subprocess.run(
-            [CHROME, "--headless", "--disable-gpu", "--window-size=1000,1000",
+            [CHROME, "--headless", "--disable-gpu", f"--window-size={SHIRINA},{VYSOTA}",
              "--hide-scrollbars", f"--screenshot={vyhod}",
              "--virtual-time-budget=3000", istochnik.as_uri()],
             check=True, capture_output=True,
