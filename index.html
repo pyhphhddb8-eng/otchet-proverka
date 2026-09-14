@@ -148,9 +148,82 @@ a:focus-visible,button:focus-visible{outline:3px solid var(--sinij);outline-offs
 }
 .podval a{overflow-wrap:anywhere}
 .podval p+p{margin-top:4px}
+/* — кнопка печати — */
+.pechat{
+  position:absolute;top:0;right:0;
+  font:700 15px/1 var(--shrift);color:var(--list);
+  background:var(--tekst);border:1px solid var(--tekst);
+  border-radius:10px;padding:12px 16px;cursor:pointer;
+  transition:background var(--plavno),transform var(--plavno);
+}
+.pechat:hover{background:var(--tekst-2);border-color:var(--tekst-2)}
+.pechat:active{transform:translateY(1px)}
+.kolontitul{display:none}
+.pechatnyj-list,.pechatnyj-list>tbody,.pechatnyj-list>tfoot,
+.pechatnyj-list>tbody>tr,.pechatnyj-list>tfoot>tr,
+.pechatnyj-list>tbody>tr>td,.pechatnyj-list>tfoot>tr>td{
+  display:block;width:auto;padding:0;margin:0;border:0;
+}
+.pechatnyj-list{border-collapse:collapse}
 /* ОФОРМЛЕНИЕ: конец */
 </style>
-<!-- ПЕЧАТЬ: задача 6 -->
+<style media="print">
+/* ПЕЧАТЬ: начало */
+@page{size:A4;margin:16mm 14mm}
+body{background:#fff;padding:0;font-size:11pt;line-height:1.42}
+/* на бумаге место дороже, чем на экране: поджимаем отступы,
+   чтобы на лист помещалось две находки, а не одна */
+.kartochka{padding:5mm}
+.nahodka{gap:3.5mm}
+.stopka{gap:4mm}
+.porjadok{gap:2.5mm}
+.porjadok li{padding:2.5mm 4mm 2.5mm 9mm}
+.porjadok li::before{left:4mm;top:2.5mm}
+.nahodka__niz{padding-top:3.5mm;gap:1mm 4mm}
+.svodka{gap:4mm;margin-top:6mm}
+#otchet{max-width:none}
+.pechat{display:none}
+h1{font-size:22pt}
+h2{font-size:15pt}
+h3{font-size:12.5pt}
+/* карточки не рвутся между страницами */
+.kartochka,.nahodka,.porjadok li,.cifra,.ocenka,.podval{
+  break-inside:avoid;page-break-inside:avoid;
+}
+.razdel{margin-top:9mm}
+.razdel>h2{break-after:avoid;page-break-after:avoid}
+.podvodka{break-inside:avoid;page-break-inside:avoid;break-after:avoid;page-break-after:avoid}
+.razdel--s-novoj-stranicy{break-before:page;page-break-before:always;margin-top:0}
+/* убрать фоны и тени, оставить смысловые рамки */
+.kartochka,.porjadok li,.cifra,.ocenka{
+  background:none;border:1px solid #c8ccd2;border-radius:0;box-shadow:none;
+}
+.verdikt,.nahodka,.poyasnenie{border-left:3pt solid #000}
+.nahodka__nomer{background:#000;color:#fff;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+.verdikt__znachok,.porjadok li::before,.ocenka__ball{color:#000}
+/* адреса ссылок разворачиваются в текст рядом со ссылкой */
+a{color:#000;text-decoration:underline}
+a[href^="http"]::after{
+  content:" (" attr(href) ")";
+  font-size:9.5pt;overflow-wrap:anywhere;text-decoration:none;
+}
+/* в шапке и подвале адрес уже написан текстом — там разворачивать незачем */
+.shapka a[href^="http"]::after,.podval a[href^="http"]::after{content:""}
+.podval{color:#000;border-top:1px solid #c8ccd2;margin-top:12mm}
+/* колонтитул на каждой странице: tfoot браузер повторяет сам
+   и отводит под него место, так что текст под него не заезжает */
+.pechatnyj-list{display:table;width:100%}
+.pechatnyj-list>tbody{display:table-row-group}
+.pechatnyj-list>tfoot{display:table-footer-group}
+.pechatnyj-list>tbody>tr,.pechatnyj-list>tfoot>tr{display:table-row}
+.pechatnyj-list>tbody>tr>td,.pechatnyj-list>tfoot>tr>td{display:table-cell}
+.kolontitul{
+  display:block;
+  font-size:8.5pt;color:#444;text-align:center;
+  padding-top:2mm;margin-top:6mm;border-top:1px solid #d6dae0;
+}
+/* ПЕЧАТЬ: конец */
+</style>
 </head>
 <body>
 <noscript>
@@ -280,6 +353,12 @@ shapka.append(el("p", "vtorichno", ОТЧЁТ.sajt.nazvanie));
 const stroka_adresa = el("p", "vtorichno");
 stroka_adresa.append(ssylka(ОТЧЁТ.sajt.adres, "shapka__adres"));
 shapka.append(stroka_adresa);
+
+const knopka = el("button", "pechat", "Сохранить в PDF");
+knopka.id = "pechat";
+knopka.type = "button";
+knopka.addEventListener("click", () => window.print());
+shapka.append(knopka);
 koren.append(shapka);
 
 /* — вердикт — */
@@ -325,6 +404,7 @@ svodka.append(cifry);
 koren.append(svodka);
 /* — что поправить — */
 const chinit = razdel("Что поправить");
+chinit.classList.add("razdel--s-novoj-stranicy");
 chinit.append(
   el(
     "p",
@@ -425,6 +505,35 @@ podval.append(
   ),
 );
 koren.append(podval);
+
+/* — колонтитул: виден только в печати, повторяется на каждой странице —
+   Обёртка таблицей — единственный способ заставить браузер отвести
+   колонтитулу место на каждом листе. Фиксированный блок этого не умеет:
+   он либо ложится поверх текста, либо уезжает на следующую страницу.
+   На экране таблица выключена и ведёт себя как обычные блоки. */
+const list = el("table", "pechatnyj-list");
+const nizList = el("tfoot");
+const nizStroka = el("tr");
+const nizYacheika = el("td");
+nizYacheika.append(
+  el(
+    "div",
+    "kolontitul",
+    `${ОТЧЁТ.sajt.adres} · проверка от ${ОТЧЁТ.zamer.data}`,
+  ),
+);
+nizStroka.append(nizYacheika);
+nizList.append(nizStroka);
+
+const telo = el("tbody");
+const teloStroka = el("tr");
+const teloYacheika = el("td");
+teloYacheika.append(...koren.childNodes);
+teloStroka.append(teloYacheika);
+telo.append(teloStroka);
+
+list.append(nizList, telo);
+koren.append(list);
 /* ПОСТРОЕНИЕ: конец */
 </script>
 </body>
