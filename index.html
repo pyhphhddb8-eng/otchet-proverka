@@ -124,6 +124,30 @@ a:focus-visible,button:focus-visible{outline:3px solid var(--sinij);outline-offs
   .nahodka__niz{grid-template-columns:1fr;gap:2px}
   .nahodka__niz dd{margin-bottom:8px}
 }
+/* — пояснения, перечень проверенного, подвал — */
+.poyasnenie{border-left:4px solid var(--sinij)}
+.poyasnenie p{max-width:62ch}
+.porjadok{
+  margin:0;padding:0;list-style:none;
+  display:flex;flex-direction:column;gap:8px;
+}
+.porjadok li{
+  position:relative;
+  background:var(--list);border:1px solid var(--ramka);border-radius:10px;
+  padding:12px 16px 12px 40px;
+  font-size:16px;line-height:1.5;
+}
+.porjadok li::before{
+  content:"✓";position:absolute;left:14px;top:12px;
+  color:var(--zelenyj);font-weight:700;
+}
+.podval{
+  margin-top:56px;padding-top:24px;
+  border-top:1px solid var(--ramka);
+  color:var(--tekst-2);font-size:14px;line-height:1.55;
+}
+.podval a{overflow-wrap:anywhere}
+.podval p+p{margin-top:4px}
 /* ОФОРМЛЕНИЕ: конец */
 </style>
 <!-- ПЕЧАТЬ: задача 6 -->
@@ -205,7 +229,7 @@ const ОТЧЁТ = {
     "Canonical: указан и совпадает с адресом страницы",
     "Страница 404: несуществующий адрес отдаёт 404, а не пустую страницу",
     "Скачки вёрстки при загрузке: ни одного",
-    "Работа с клавиатуры: фильтры и карточки доступны без мыши",
+    "Работа с клавиатуры: фильтры, сортировка и кнопки в карточках получают фокус, рамка фокуса видна",
     "Мобильная вёрстка на ширине 360 px: горизонтальной прокрутки нет",
     "Консоль браузера: ни ошибок, ни предупреждений"
   ],
@@ -236,6 +260,10 @@ function razdel(zagolovok) {
   const s = el("section", "razdel");
   s.append(el("h2", "", zagolovok));
   return s;
+}
+
+function slovom(chislo) {
+  return { 2: "двух", 3: "трёх", 4: "четырёх", 5: "пяти" }[chislo] || String(chislo);
 }
 
 function ssylka(adres, klassy = "") {
@@ -340,6 +368,64 @@ for (const n of ОТЧЁТ.nahodki) {
 }
 chinit.append(spisok_nahodok);
 koren.append(chinit);
+/* — почему SEO 63 — */
+const seo = razdel(ОТЧЁТ.seo.zagolovok);
+const seo_kartochka = el("div", "kartochka poyasnenie");
+seo_kartochka.append(el("p", "", ОТЧЁТ.seo.tekst));
+seo.append(seo_kartochka);
+koren.append(seo);
+
+/* — проверено и в порядке — */
+const porjadok = razdel("Проверено и в порядке");
+porjadok.append(
+  el(
+    "p",
+    "vtorichno podvodka",
+    "Здесь перечислено то, что проверялось и замечаний не вызвало — " +
+      "чтобы был виден охват проверки, а не только её находки.",
+  ),
+);
+const spisok = el("ul", "porjadok");
+for (const stroka of ОТЧЁТ.provereno) {
+  spisok.append(el("li", "", stroka));
+}
+porjadok.append(spisok);
+koren.append(porjadok);
+
+/* — не наша зона — */
+const chuzhoe = razdel(ОТЧЁТ.ne_nasha_zona.zagolovok);
+const chuzhoe_kartochka = el("div", "kartochka poyasnenie");
+chuzhoe_kartochka.append(el("p", "", ОТЧЁТ.ne_nasha_zona.tekst));
+chuzhoe.append(chuzhoe_kartochka);
+koren.append(chuzhoe);
+
+/* — подвал: чем мерил, когда, в каких условиях — */
+const z = ОТЧЁТ.zamer;
+const podval = el("footer", "podval");
+podval.append(el("p", "nadpis", "Как проводился замер"));
+podval.append(
+  el(
+    "p",
+    "",
+    `${z.instrument} ${z.versiya}, ${z.rezhim}. ` +
+      `Медиана ${slovom(z.progonov)} прогонов. Замер от ${z.data}.`,
+  ),
+);
+const podval_sajt = el("p", "");
+podval_sajt.append(
+  document.createTextNode("Проверенный сайт: "),
+  ssylka(ОТЧЁТ.sajt.adres),
+);
+podval.append(podval_sajt);
+podval.append(
+  el(
+    "p",
+    "",
+    "Сырые отчёты инструмента сохранены — числа в документе можно сверить с ними.",
+  ),
+);
+koren.append(podval);
+/* ПОСТРОЕНИЕ: конец */
 </script>
 </body>
 </html>
