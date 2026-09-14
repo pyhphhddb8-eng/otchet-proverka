@@ -96,6 +96,34 @@ a:focus-visible,button:focus-visible{outline:3px solid var(--sinij);outline-offs
   .ocenki{grid-template-columns:1fr 1fr}
   .cifry{grid-template-columns:1fr}
 }
+/* — что поправить — */
+.podvodka{margin-bottom:16px;max-width:56ch;font-size:15px;line-height:1.55}
+.nahodka{
+  border-left:4px solid var(--zheltyj);
+  display:flex;flex-direction:column;gap:16px;
+}
+.nahodka__verh{display:flex;align-items:flex-start;gap:12px}
+.nahodka__nomer{
+  flex:none;width:28px;height:28px;border-radius:50%;
+  background:var(--zheltyj);color:#fff;
+  font-size:15px;font-weight:700;line-height:28px;text-align:center;
+  margin-top:1px;
+}
+.nahodka__blok>p+p{margin-top:2px;max-width:62ch}
+.nahodka__podpis{
+  font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+}
+.nahodka__niz{
+  display:grid;grid-template-columns:auto 1fr;gap:6px 16px;
+  margin:0;padding-top:16px;
+  border-top:1px solid var(--ramka);font-size:15px;
+}
+.nahodka__niz dt{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;align-self:center}
+.nahodka__niz dd{margin:0}
+@media (max-width:460px){
+  .nahodka__niz{grid-template-columns:1fr;gap:2px}
+  .nahodka__niz dd{margin-bottom:8px}
+}
 /* ОФОРМЛЕНИЕ: конец */
 </style>
 <!-- ПЕЧАТЬ: задача 6 -->
@@ -267,6 +295,51 @@ for (const m of ОТЧЁТ.metriki) {
 }
 svodka.append(cifry);
 koren.append(svodka);
+/* — что поправить — */
+const chinit = razdel("Что поправить");
+chinit.append(
+  el(
+    "p",
+    "vtorichno podvodka",
+    "Порядок — по важности для посетителя, а не по величине экономии. " +
+      "Ни один пункт не мешает запуску.",
+  ),
+);
+
+const spisok_nahodok = el("div", "stopka");
+for (const n of ОТЧЁТ.nahodki) {
+  const k = el("article", "kartochka nahodka");
+
+  const verh = el("div", "nahodka__verh");
+  verh.append(
+    el("span", "nahodka__nomer", String(n.nomer)),
+    el("h3", "", n.zagolovok),
+  );
+  k.append(verh);
+
+  for (const [podpis, tekst] of [
+    ["Что нашёл", n.chto],
+    ["Чем это грозит посетителю", n.chem_grozit],
+    ["Что делать", n.chto_delat],
+  ]) {
+    const blok = el("div", "nahodka__blok");
+    blok.append(el("p", "nahodka__podpis vtorichno", podpis), el("p", "", tekst));
+    k.append(blok);
+  }
+
+  const niz = el("dl", "nahodka__niz");
+  for (const [podpis, tekst] of [
+    ["Сколько займёт", n.skolko],
+    ["Справитесь сами", n.sam],
+  ]) {
+    niz.append(el("dt", "vtorichno", podpis), el("dd", "", tekst));
+  }
+  k.append(niz);
+
+  spisok_nahodok.append(k);
+}
+chinit.append(spisok_nahodok);
+koren.append(chinit);
 </script>
 </body>
 </html>
