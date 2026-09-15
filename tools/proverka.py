@@ -32,12 +32,35 @@ except json.JSONDecodeError as e:
     print(f"Тело объекта ОТЧЁТ — не валидный JSON: {e}")
     sys.exit(1)
 
-polnyj = json.loads((ZAMERY / "lh-full.json").read_text())
-progony = [json.loads((ZAMERY / f"lh-k{n}.json").read_text()) for n in (1, 2, 3)]
+def zagruzit(papka):
+    """Полный отчёт и три прогона из одной папки замеров."""
+    polnyj = json.loads((papka / "lh-full.json").read_text())
+    progony = [json.loads((papka / f"lh-k{n}.json").read_text()) for n in (1, 2, 3)]
+    return polnyj, progony
 
 
-def ball(kategoriya):
-    return round(polnyj["categories"][kategoriya]["score"] * 100)
+DO, DO_PROGONY = zagruzit(ZAMERY)
+POSLE, POSLE_PROGONY = zagruzit(ZAMERY / "posle")
+
+# Отчёт второй версии рассказывает про состояние после правок, поэтому
+# основные числа сверяются с замером «после», а пара «было / стало» —
+# с обоими.
+polnyj, progony = POSLE, POSLE_PROGONY
+
+
+def ball(kategoriya, otchet=None):
+    return round((otchet or polnyj)["categories"][kategoriya]["score"] * 100)
+
+
+def lcp_mediana_sek(progony_spiska):
+    mediana = sorted(
+        p["audits"]["largest-contentful-paint"]["numericValue"] for p in progony_spiska
+    )[1]
+    return f"{round(mediana / 1000, 1)} с".replace(".", ",")
+
+
+def ves_kb(otchet):
+    return round(otchet["audits"]["total-byte-weight"]["numericValue"] / 1024)
 
 
 # ------------------------------------------------------------- оценки
@@ -54,19 +77,15 @@ trebuem(
 )
 
 # ------------------------------------------------------------- метрики
-ves_kb = round(polnyj["audits"]["total-byte-weight"]["numericValue"] / 1024)
-lcp_mediana = sorted(
-    p["audits"]["largest-contentful-paint"]["numericValue"] for p in progony
-)[1]
-lcp_sek = round(lcp_mediana / 1000, 1)
+ves = ves_kb(polnyj)
 cls = polnyj["audits"]["cumulative-layout-shift"]["numericValue"]
 
 metriki = {m["imya"]: m["znachenie"] for m in otchet["metriki"]}
 trebuem(
-    metriki.get("Вес страницы") == f"{ves_kb} КБ",
-    f"Вес страницы: в отчёте {metriki.get('Вес страницы')!r}, в замере {ves_kb} КБ",
+    metriki.get("Вес страницы") == f"{ves} КБ",
+    f"Вес страницы: в отчёте {metriki.get('Вес страницы')!r}, в замере {ves} КБ",
 )
-ozhidaem_lcp = f"{lcp_sek} с".replace(".", ",")
+ozhidaem_lcp = lcp_mediana_sek(progony)
 trebuem(
     metriki.get("Главный элемент") == ozhidaem_lcp,
     f"Главный элемент: в отчёте {metriki.get('Главный элемент')!r}, "
@@ -109,16 +128,59 @@ trebuem(
     f"В блоке «не наша зона» нет числа {kesh_kb} КБ — столько даёт cache-insight",
 )
 
+# ------------------------------------------------------- было / стало
+# Каждая строка пары сверяется с двумя замерами, иначе «стало» можно
+# написать любое.
+ozhidaem_paru = {
+    "Доступность": (str(ball("accessibility", DO)), str(ball("accessibility", POSLE))),
+    "Главный элемент": (lcp_mediana_sek(DO_PROGONY), lcp_mediana_sek(POSLE_PROGONY)),
+}
+para = {s["imya"]: (s["bylo"], s["stalo"]) for s in otchet["bylo_stalo"]}
+for imya, (bylo, stalo) in ozhidaem_paru.items():
+    trebuem(
+        para.get(imya) == (bylo, stalo),
+        f"Пара «было / стало» для {imya!r}: в отчёте {para.get(imya)}, "
+        f"в замерах {(bylo, stalo)}",
+    )
+
+# Порядок заголовков: в первом замере ошибка, во втором нет.
+trebuem(
+    DO["audits"]["heading-order"]["score"] == 0,
+    "Первый замер должен показывать ошибку порядка заголовков",
+)
+trebuem(
+    POSLE["audits"]["heading-order"]["score"] == 1,
+    "Второй замер всё ещё показывает ошибку порядка заголовков",
+)
+
+# Находка про лишний JS осталась: значит, и в отчёте она должна остаться.
+ostalis = [n for n in otchet["nahodki"] if n["status"] == "ostalos"]
+ispravleny = [n for n in otchet["nahodki"] if n["status"] == "ispravleno"]
+trebuem(
+    len(ispravleny) == 2 and len(ostalis) == 1,
+    f"Ожидались две исправленные находки и одна оставшаяся, "
+    f"а в отчёте {len(ispravleny)} и {len(ostalis)}",
+)
+trebuem(
+    ostalis and "JavaScript" in ostalis[0]["zagolovok"],
+    "Оставшейся должна быть находка про JavaScript",
+)
+
 # ------------------------------------------------------------- подпись
-trebuem(
-    otchet["zamer"]["versiya"] == polnyj["lighthouseVersion"],
-    f"Версия инструмента: в отчёте {otchet['zamer']['versiya']!r}, "
-    f"в замере {polnyj['lighthouseVersion']!r}",
-)
-trebuem(
-    otchet["zamer"]["progonov"] == 3,
-    "В подписи должно стоять три прогона — столько файлов в zamery/",
-)
+for klyuch, istochnik, imya in (
+    ("do", DO, "первый"),
+    ("posle", POSLE, "второй"),
+):
+    z = otchet["zamery"][klyuch]
+    trebuem(
+        z["versiya"] == istochnik["lighthouseVersion"],
+        f"Версия инструмента в {imya} замере: в отчёте {z['versiya']!r}, "
+        f"в файле {istochnik['lighthouseVersion']!r}",
+    )
+    trebuem(
+        z["progonov"] == 3,
+        f"В подписи {imya} замера должно стоять три прогона",
+    )
 trebuem(
     otchet["sajt"]["adres"] == polnyj["finalDisplayedUrl"],
     f"Адрес проверенного сайта: в отчёте {otchet['sajt']['adres']!r}, "

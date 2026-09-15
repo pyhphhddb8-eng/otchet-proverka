@@ -114,7 +114,7 @@ a:focus-visible,button:focus-visible{outline:3px solid var(--sinij);outline-offs
   border-left:4px solid var(--zheltyj);
   display:flex;flex-direction:column;gap:16px;
 }
-.nahodka__verh{display:flex;align-items:flex-start;gap:12px}
+.nahodka__verh{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px}
 .nahodka__nomer{
   flex:none;width:28px;height:28px;border-radius:50%;
   background:var(--zheltyj);color:#fff;
@@ -177,6 +177,28 @@ a:focus-visible,button:focus-visible{outline:3px solid var(--sinij);outline-offs
   display:block;width:auto;padding:0;margin:0;border:0;
 }
 .pechatnyj-list{border-collapse:collapse}
+/* — пара «было / стало» и отметки на находках — */
+.para{border-left:4px solid var(--sinij)}
+.para__verh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px}
+.para__imya{font-size:17px}
+.para__znacheniya{display:flex;align-items:baseline;gap:8px;font-size:17px}
+.para__bylo{color:var(--tekst-2);text-decoration:line-through;text-decoration-thickness:1px}
+.para__strelka{color:var(--tekst-2)}
+.para__stalo{font-weight:700;color:var(--zelenyj)}
+.para__poyasnenie{margin-top:6px;font-size:15px;line-height:1.5;max-width:64ch}
+.nahodka--ispravleno{border-left-color:var(--zelenyj)}
+.nahodka--ispravleno .nahodka__nomer{background:var(--zelenyj)}
+.otmetka{
+  margin-left:auto;flex:none;align-self:flex-start;
+  border-radius:999px;padding:4px 10px;
+  font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--list);
+}
+.otmetka--ispravleno{background:var(--zelenyj)}
+.otmetka--ostalos{background:var(--zheltyj)}
+@media (max-width:460px){
+  .otmetka{margin-left:0;order:3;width:100%;text-align:center}
+}
 /* ОФОРМЛЕНИЕ: конец */
 </style>
 <style media="print">
@@ -199,7 +221,7 @@ h1{font-size:22pt}
 h2{font-size:15pt}
 h3{font-size:12.5pt}
 /* карточки не рвутся между страницами */
-.kartochka,.nahodka,.porjadok li,.cifra,.ocenka,.podval{
+.kartochka,.nahodka,.porjadok li,.cifra,.ocenka,.podval,.para{
   break-inside:avoid;page-break-inside:avoid;
 }
 .razdel{margin-top:9mm}
@@ -211,7 +233,9 @@ h3{font-size:12.5pt}
   background:none;border:1px solid #c8ccd2;border-radius:0;box-shadow:none;
 }
 .verdikt,.nahodka,.poyasnenie{border-left:3pt solid #000}
-.nahodka__nomer{background:#000;color:#fff;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+.nahodka__nomer,.otmetka{background:#000;color:#fff;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+.nahodka--ispravleno{border-left-style:solid}
+.para__stalo{color:#000}
 .verdikt__znachok,.porjadok li::before,.ocenka__ball{color:#000}
 /* адреса ссылок разворачиваются в текст рядом со ссылкой */
 a{color:#000;text-decoration:underline}
@@ -250,17 +274,18 @@ a[href^="http"]::after{
 <script>
 /* ДАННЫЕ: начало. Следующий отчёт по другому сайту — замена этого объекта. */
 const ОТЧЁТ = {
+  "versiya": 2,
   "sajt": {
     "adres": "https://pyhphhddb8-eng.github.io/katalog-arenda/",
     "nazvanie": "Каталог аренды строительного инструмента"
   },
   "verdikt": {
     "zagolovok": "Сайт готов к запуску",
-    "poyasnenie": "Ничего, что мешало бы открыть сайт посетителям, проверка не нашла. Три пункта из списка ниже стоит поправить после запуска — они не блокируют его."
+    "poyasnenie": "Вторая версия отчёта: сайт перепроверен после правок. Две находки из трёх закрыты, третья осталась — и ниже объяснено, почему её нельзя закрыть, не меняя каркас сайта."
   },
   "ocenki": [
     { "imya": "Производительность", "ball": 98 },
-    { "imya": "Доступность", "ball": 98 },
+    { "imya": "Доступность", "ball": 100 },
     { "imya": "Лучшие практики", "ball": 100 },
     { "imya": "SEO", "ball": 63 }
   ],
@@ -268,41 +293,73 @@ const ОТЧЁТ = {
     {
       "imya": "Вес страницы",
       "znachenie": "82 КБ",
-      "poyasnenie": "Столько качает браузер при первом заходе: документ 1,4 КБ, скрипт 75,6 КБ, стили 4,5 КБ, иконка 0,6 КБ."
+      "poyasnenie": "Столько качает браузер при первом заходе: документ 1,6 КБ, скрипт 75,7 КБ, стили 4,5 КБ, иконка 0,6 КБ."
     },
     {
       "imya": "Главный элемент",
-      "znachenie": "1,4 с",
+      "znachenie": "1,3 с",
       "poyasnenie": "Через столько посетитель видит главное на экране. Замер на мобильном интернете с замедлением."
+    }
+  ],
+  "bylo_stalo": [
+    {
+      "imya": "Доступность",
+      "bylo": "98",
+      "stalo": "100",
+      "poyasnenie": "Пропуск уровня заголовков был единственным замечанием по доступности. Его убрали — оценка стала полной."
+    },
+    {
+      "imya": "Порядок заголовков",
+      "bylo": "уровень пропущен",
+      "stalo": "без пропусков",
+      "poyasnenie": "Перед списком позиций появился настоящий заголовок «Каталог» уровня h2."
+    },
+    {
+      "imya": "Файл favicon.ico",
+      "bylo": "404",
+      "stalo": "отдаётся",
+      "poyasnenie": "Собран из того же svg, что и остальные иконки, и объявлен в разметке первым."
+    },
+    {
+      "imya": "Главный элемент",
+      "bylo": "1,4 с",
+      "stalo": "1,3 с",
+      "poyasnenie": "Разница в пределах разброса замеров: это не результат правок, а шум. Показываем честно."
     }
   ],
   "nahodki": [
     {
       "nomer": 1,
+      "status": "ispravleno",
       "zagolovok": "Пропущен уровень заголовков",
-      "chto": "После заголовка страницы h1 сразу идёт h3 в карточках позиций — уровень h2 пропущен. Первая такая карточка: «Лестница-трансформер Alumet 4×4».",
+      "chto": "После заголовка страницы h1 сразу шёл h3 в карточках позиций — уровень h2 был пропущен. На узком экране панель «Подбор» со своим h2 скрыта, поэтому на телефоне разрыв был виден всегда.",
       "chem_grozit": "Программа чтения с экрана строит по заголовкам оглавление страницы. С пропущенным уровнем оглавление разваливается, и незрячий посетитель теряет, где кончается один раздел и начинается другой.",
-      "chto_delat": "Либо заменить h3 в карточках на h2, либо добавить перед списком позиций настоящий заголовок h2 — например, «Каталог».",
+      "chto_delat": "Добавить перед списком позиций настоящий заголовок h2.",
+      "chto_sdelano": "Перед сеткой позиций появился заголовок «Каталог» уровня h2. Проверено на 390 px и на 1280 px: порядок стал h1 → h2 → h3 без пропусков, оценка доступности поднялась с 98 до 100.",
       "skolko": "15 минут",
       "sam": "Да, если правка делается в вёрстке карточки — меняется один тег"
     },
     {
       "nomer": 2,
+      "status": "ispravleno",
       "zagolovok": "Нет файла favicon.ico",
-      "chto": "Объявлены favicon.svg и иконка для iPhone, оба отдаются. Привычный favicon.ico по корневому адресу возвращает 404.",
+      "chto": "Объявлены favicon.svg и иконка для iPhone, оба отдавались. Привычный favicon.ico по корневому адресу возвращал 404.",
       "chem_grozit": "Часть сервисов и старых браузеров просит именно .ico и не умеет запрашивать svg. У них вместо иконки сайта будет пустой лист — в закладках, во вкладке, в списках ссылок.",
       "chto_delat": "Сделать из имеющегося svg файл favicon.ico размером 32×32 и положить в корень сайта.",
+      "chto_sdelano": "Файл собран из того же svg, что и остальные иконки, — рисунок совпадает. Лежит в корне, отдаётся с кодом 200 и типом image/vnd.microsoft.icon, объявлен в разметке первым.",
       "skolko": "10 минут",
       "sam": "Да, иконка собирается из svg любым онлайн-конвертером"
     },
     {
       "nomer": 3,
+      "status": "ostalos",
       "zagolovok": "41 КБ неиспользуемого JavaScript",
       "chto": "В скрипте страницы 41 КБ кода, который при загрузке не выполняется. Это больше половины его веса.",
       "chem_grozit": "Лишний код всё равно качается и разбирается браузером. На быстрой странице разница почти не видна, на медленном телефоне в дороге — заметна.",
-      "chto_delat": "Посмотреть, что тянется в сборку целиком, и подключать только используемые части. Обычно это одна-две библиотеки, импортированные пакетом.",
-      "skolko": "1–2 часа",
-      "sam": "Нет, нужна работа со сборкой проекта"
+      "chto_delat": "Посмотреть, что тянется в сборку целиком, и подключать только используемые части.",
+      "chto_sdelano": "Разобрали сборку по исходникам: 90 % её веса — это сам каркас React, и только 5 % — код самого каталога. Окно с подробностями вынесли в отдельный кусок, он теперь качается при первом открытии карточки, — но на общую цифру это почти не повлияло, потому что убирать нужно не код каталога. Оставшийся 41 КБ — неиспользуемые ветки самого React.",
+      "skolko": "1–2 часа на замену каркаса",
+      "sam": "Нет: это смена каркаса сайта, а не правка"
     }
   ],
   "seo": {
@@ -316,18 +373,30 @@ const ОТЧЁТ = {
     "Скачки вёрстки при загрузке: ни одного",
     "Работа с клавиатуры: фильтры, сортировка и кнопки в карточках получают фокус, рамка фокуса видна",
     "Мобильная вёрстка на ширине 360 px: горизонтальной прокрутки нет",
-    "Консоль браузера: ни ошибок, ни предупреждений"
+    "Консоль браузера: ни ошибок, ни предупреждений",
+    "Окно подробностей после правки: открывается, закрывается по Esc и крестиком, прокрутка фона возвращается"
   ],
   "ne_nasha_zona": {
     "zagolovok": "Что не в зоне ответственности исполнителя",
-    "tekst": "Заголовки кэширования выставляет сама площадка GitHub Pages. Lighthouse оценивает возможную экономию в 73 КБ на повторных заходах, но повлиять на это со стороны сайта нельзя — настройка живёт на стороне хостинга. На своём хостинге этот пункт решается одной строкой в настройках сервера."
+    "tekst": "Заголовки кэширования выставляет сама площадка GitHub Pages. Lighthouse оценивает возможную экономию в 74 КБ на повторных заходах, но повлиять на это со стороны сайта нельзя — настройка живёт на стороне хостинга. На своём хостинге этот пункт решается одной строкой в настройках сервера."
   },
-  "zamer": {
-    "instrument": "Lighthouse",
-    "versiya": "13.4.1",
-    "rezhim": "мобильный режим с замедлением сети",
-    "progonov": 3,
-    "data": "14 сентября 2026 года"
+  "zamery": {
+    "do": {
+      "instrument": "Lighthouse",
+      "versiya": "13.4.1",
+      "rezhim": "мобильный режим с замедлением сети",
+      "progonov": 3,
+      "data": "14 сентября 2026 года",
+      "podpis": "до правок"
+    },
+    "posle": {
+      "instrument": "Lighthouse",
+      "versiya": "13.4.1",
+      "rezhim": "мобильный режим с замедлением сети",
+      "progonov": 3,
+      "data": "15 сентября 2026 года",
+      "podpis": "после правок"
+    }
   }
 };
 /* ДАННЫЕ: конец */
@@ -360,7 +429,13 @@ function ssylka(adres, klassy = "") {
 
 /* — шапка: кто проверен и когда — */
 const shapka = el("header", "shapka");
-shapka.append(el("p", "vtorichno nadpis", "Отчёт о проверке сайта перед запуском"));
+shapka.append(
+  el(
+    "p",
+    "vtorichno nadpis",
+    `Отчёт о проверке сайта перед запуском · версия ${ОТЧЁТ.versiya}`,
+  ),
+);
 shapka.append(el("p", "vtorichno", ОТЧЁТ.sajt.nazvanie));
 const stroka_adresa = el("p", "vtorichno");
 stroka_adresa.append(ssylka(ОТЧЁТ.sajt.adres, "shapka__adres"));
@@ -414,15 +489,47 @@ for (const m of ОТЧЁТ.metriki) {
 }
 svodka.append(cifry);
 koren.append(svodka);
+
+/* — было / стало — */
+const paraRazdel = razdel("Было и стало");
+paraRazdel.append(
+  el(
+    "p",
+    "vtorichno podvodka",
+    "Оба замера сделаны одним инструментом, в одном режиме и по медиане трёх " +
+      "прогонов — иначе сравнивать нельзя.",
+  ),
+);
+const para = el("div", "stopka");
+for (const s of ОТЧЁТ.bylo_stalo) {
+  const stroka = el("div", "kartochka para");
+  const verh = el("div", "para__verh");
+  verh.append(
+    el("h3", "para__imya", s.imya),
+    (() => {
+      const znacheniya = el("p", "para__znacheniya");
+      znacheniya.append(
+        el("span", "para__bylo", s.bylo),
+        el("span", "para__strelka", "→"),
+        el("span", "para__stalo", s.stalo),
+      );
+      return znacheniya;
+    })(),
+  );
+  stroka.append(verh, el("p", "para__poyasnenie vtorichno", s.poyasnenie));
+  para.append(stroka);
+}
+paraRazdel.append(para);
+koren.append(paraRazdel);
 /* — что поправить — */
-const chinit = razdel("Что поправить");
+const chinit = razdel("Находки и что с ними стало");
 chinit.classList.add("razdel--s-novoj-stranicy");
 chinit.append(
   el(
     "p",
     "vtorichno podvodka",
-    "Порядок — по важности для посетителя, а не по величине экономии. " +
-      "Ни один пункт не мешает запуску.",
+    "Порядок тот же, что в первой версии отчёта: по важности для посетителя, " +
+      "а не по величине экономии. Ни один пункт не мешал запуску.",
   ),
 );
 
@@ -430,10 +537,18 @@ const spisok_nahodok = el("div", "stopka");
 for (const n of ОТЧЁТ.nahodki) {
   const k = el("article", "kartochka nahodka");
 
+  const ispravleno = n.status === "ispravleno";
+  k.classList.add(ispravleno ? "nahodka--ispravleno" : "nahodka--ostalos");
+
   const verh = el("div", "nahodka__verh");
   verh.append(
     el("span", "nahodka__nomer", String(n.nomer)),
     el("h3", "", n.zagolovok),
+    el(
+      "span",
+      "otmetka " + (ispravleno ? "otmetka--ispravleno" : "otmetka--ostalos"),
+      ispravleno ? "Исправлено" : "Осталось",
+    ),
   );
   k.append(verh);
 
@@ -441,6 +556,7 @@ for (const n of ОТЧЁТ.nahodki) {
     ["Что нашёл", n.chto],
     ["Чем это грозит посетителю", n.chem_grozit],
     ["Что делать", n.chto_delat],
+    [ispravleno ? "Что сделано" : "Что выяснилось при починке", n.chto_sdelano],
   ]) {
     const blok = el("div", "nahodka__blok");
     blok.append(el("p", "nahodka__podpis vtorichno", podpis), el("p", "", tekst));
@@ -492,17 +608,19 @@ chuzhoe.append(chuzhoe_kartochka);
 koren.append(chuzhoe);
 
 /* — подвал: чем мерил, когда, в каких условиях — */
-const z = ОТЧЁТ.zamer;
 const podval = el("footer", "podval");
-podval.append(el("p", "nadpis", "Как проводился замер"));
-podval.append(
-  el(
-    "p",
-    "",
-    `${z.instrument} ${z.versiya}, ${z.rezhim}. ` +
-      `Медиана ${slovom(z.progonov)} прогонов. Замер от ${z.data}.`,
-  ),
-);
+podval.append(el("p", "nadpis", "Как проводились замеры"));
+for (const klyuch of ["do", "posle"]) {
+  const z = ОТЧЁТ.zamery[klyuch];
+  podval.append(
+    el(
+      "p",
+      "",
+      `Замер ${z.podpis}: ${z.instrument} ${z.versiya}, ${z.rezhim}, ` +
+        `медиана ${slovom(z.progonov)} прогонов, ${z.data}.`,
+    ),
+  );
+}
 const podval_sajt = el("p", "");
 podval_sajt.append(
   document.createTextNode("Проверенный сайт: "),
@@ -513,7 +631,7 @@ podval.append(
   el(
     "p",
     "",
-    "Сырые отчёты инструмента сохранены — числа в документе можно сверить с ними.",
+    "Сырые отчёты обоих замеров сохранены — числа в документе можно сверить с ними.",
   ),
 );
 koren.append(podval);
@@ -531,7 +649,7 @@ nizYacheika.append(
   el(
     "div",
     "kolontitul",
-    `${ОТЧЁТ.sajt.adres} · проверка от ${ОТЧЁТ.zamer.data}`,
+    `${ОТЧЁТ.sajt.adres} · проверка от ${ОТЧЁТ.zamery.posle.data} · версия ${ОТЧЁТ.versiya}`,
   ),
 );
 nizStroka.append(nizYacheika);
