@@ -24,7 +24,9 @@ def kusok(obrazec, chto):
     return m.group(0)
 
 
-shrift = kusok(r"@font-face\{.*?\}", "правило @font-face")
+shrift = "\n".join(re.findall(r"@font-face\{.*?\}", HTML, re.S))
+if not shrift:
+    raise SystemExit("Не нашёл в index.html: правила @font-face")
 tokeny = kusok(r":root\{.*?\}", "блок :root")
 
 # данные для превью — из того же объекта, что и сам отчёт
@@ -33,41 +35,38 @@ import json
 
 otchet = json.loads(dannye)
 ocenki = "".join(
-    f'<div class="o"><b class="{"z" if o["ball"] >= 90 else "zh"}">{o["ball"]}</b>'
-    f"<span>{o['imya']}</span></div>"
+    f'<tr><td>{o["imya"]}</td><td class="{"z" if o["ball"] >= 90 else "zh"}">{o["ball"]}</td></tr>'
     for o in otchet["ocenki"]
 )
+data = otchet["zamery"]["posle"]["data"].replace(" года", "")
 
+# Превью — верх того же листа: лист отчёта на столе со штампом проверки.
 STRANICA = f"""<!doctype html><html lang="ru"><head><meta charset="utf-8"><style>
 {shrift}
 {tokeny}
 *{{box-sizing:border-box;margin:0}}
-body{{width:1200px;height:630px;background:var(--fon);
-  font-family:var(--shrift);color:var(--tekst);
-  padding:64px 80px;display:flex;flex-direction:column;justify-content:space-between}}
-.nadpis{{font-size:22px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
-  color:var(--tekst-2)}}
-h1{{font-size:76px;font-weight:700;letter-spacing:-.025em;line-height:1.04;margin:14px 0 0}}
-.galka{{color:var(--zelenyj);font-size:52px;font-weight:700;line-height:1}}
-.pod{{font-size:26px;color:var(--tekst-2);margin-top:18px;max-width:30ch;line-height:1.4}}
-.ocenki{{display:flex;gap:16px}}
-.o{{flex:1;background:var(--list);border:1px solid var(--ramka);border-radius:14px;
-  padding:20px;text-align:center}}
-.o b{{display:block;font-size:52px;line-height:1.05;letter-spacing:-.02em}}
-.o .z{{color:var(--zelenyj)}} .o .zh{{color:var(--zheltyj)}}
-.o span{{font-size:19px;color:var(--tekst-2)}}
-.niz{{display:flex;flex-direction:column;gap:18px}}
-.adres{{font-size:20px;color:var(--tekst-2);line-height:1.45}}
+body{{width:1200px;height:630px;overflow:hidden;background:var(--fon);
+  font-family:var(--sans);color:var(--tekst);position:relative}}
+.list{{position:absolute;left:150px;top:56px;width:900px;height:640px;background:var(--list);
+  padding:52px 64px;box-shadow:0 2px 4px rgba(27,31,38,.15),0 30px 60px -30px rgba(27,31,38,.55)}}
+.shapka{{font-size:21px;padding-bottom:20px;border-bottom:3px solid var(--tekst);line-height:1.45}}
+.shapka span{{color:var(--tekst-2)}}
+h1{{font-family:var(--serif);font-weight:600;font-size:62px;line-height:1.08;margin-top:34px;max-width:12ch;text-wrap:balance}}
+.shtamp{{position:absolute;right:70px;top:150px;width:280px;padding:16px 10px 13px;
+  border:5px double var(--shtamp);border-radius:9px;color:var(--shtamp);text-align:center;
+  transform:rotate(-7deg)}}
+.shtamp b{{display:block;font-size:36px;font-weight:600;letter-spacing:.06em;line-height:1.1}}
+.shtamp span{{display:block;font-size:20px;margin-top:4px}}
+table{{margin-top:30px;border-collapse:collapse;font-size:23px;width:470px}}
+td{{padding:8px 0;border-top:1px solid var(--ramka)}}
+td+td{{text-align:right;font-weight:600}}
+.z{{color:var(--zelenyj)}} .zh{{color:var(--zheltyj)}}
 </style></head><body>
-<div>
-  <p class="nadpis">Отчёт о проверке сайта перед запуском</p>
-  <p class="galka">✓</p>
+<div class="list">
+  <p class="shapka">Отчёт о проверке сайта перед запуском<br><span>{otchet["sajt"]["nazvanie"]}</span></p>
   <h1>{otchet["verdikt"]["zagolovok"]}</h1>
-  <p class="pod">Три пункта поправить после запуска. Ни один не мешает открыть сайт.</p>
-</div>
-<div class="niz">
-  <div class="ocenki">{ocenki}</div>
-  <p class="adres">Проверен каталог аренды строительного инструмента<br>{otchet["sajt"]["adres"]}</p>
+  <table>{ocenki}</table>
+  <p class="shtamp"><b>ПРОВЕРЕНО</b><span>{data}</span></p>
 </div>
 </body></html>"""
 

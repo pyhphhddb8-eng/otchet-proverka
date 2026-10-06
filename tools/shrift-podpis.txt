@@ -1,7 +1,8 @@
-Шрифт: Inter, SIL Open Font License 1.1
-Источник: github.com/google/fonts, ofl/inter/Inter[opsz,wght].ttf (856 КБ)
-Оси: opsz прижата к 16, wght сужена до 400–700
+Шрифты: IBM Plex Sans и IBM Plex Serif, SIL Open Font License 1.1
+Источник: github.com/google/fonts, ofl/ibmplexsans/IBMPlexSans[wdth,wght].ttf
+          и ofl/ibmplexserif/IBMPlexSerif-SemiBold.ttf
+Plex Sans: wdth прижата к 100, wght сужена до 400–600; Plex Serif — 600
 Подрезка: python3 tools/shrift.py — набор символов берётся из index.html
-Символов в наборе: 167
-Размер после подрезки: 22,1 КБ (woff2), в странице base64 — около 30 КБ
-Дата подрезки: 14.09.2026
+Символов в наборе: 171
+Размер после подрезки: Sans 21,1 КБ, Serif 12,0 КБ (woff2)
+Дата подрезки: 06.10.2026
